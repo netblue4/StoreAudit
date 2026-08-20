@@ -68,9 +68,17 @@ button { font-family: inherit; }
 }
 .app-header .spacer { flex: 1; }
 .app-header .ctx {
-  font-size: .85rem; opacity: .85; display: flex; gap: 14px; align-items: center;
+  font-size: .85rem; opacity: .85; display: flex; gap: 14px; align-items: center; min-width: 0;
 }
 .app-header .ctx b { font-weight: 600; opacity: 1; }
+.app-header .ctx-store { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; }
+@media (max-width: 560px) {
+  .app-header { padding: 10px 12px; gap: 8px; }
+  .app-header .brand span:not(.logo) { display: none; }   /* keep just the logo, save width */
+  .app-header .ctx { gap: 8px; font-size: .8rem; }
+  .app-header .ctx .hide-phone { display: none; }         /* drop the date on small phones */
+  .app-header .ctx-store { max-width: 52vw; }
+}
 
 .container { max-width: 1180px; margin: 0 auto; padding: 20px 18px 80px; }
 
@@ -165,6 +173,16 @@ textarea { resize: vertical; min-height: 60px; }
 .audit-layout { display: grid; grid-template-columns: 290px 1fr; gap: 20px; align-items: start; }
 @media (max-width: 900px){ .audit-layout { grid-template-columns: 1fr; } }
 .cat-nav { position: sticky; top: 68px; max-height: calc(100vh - 90px); overflow-y: auto; }
+
+/* On phones/tablets, replace the sidebar list with a compact dropdown picker
+   so the questions are visible immediately instead of below 38 categories. */
+.mobile-cat-picker { display: none; }
+@media (max-width: 900px) {
+  .cat-nav { display: none; }
+  .mobile-cat-picker { display: block; position: sticky; top: 58px; z-index: 20; }
+  .mobile-cat-picker .card { padding: 12px; margin-bottom: 14px; }
+  .mobile-cat-picker select { font-weight: 600; }
+}
 .cat-nav .card { padding: 8px; }
 .cat-nav ul { list-style: none; margin: 0; padding: 0; }
 .cat-nav li {
@@ -284,7 +302,13 @@ table.data tfoot td { font-weight: 800; background: var(--accent-l); border-top:
 
 /* subnav tabs */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; flex-wrap: wrap; }
-.tabs .tab { padding: 9px 15px; cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--grey); border-bottom: 2px solid transparent; }
+.tabs .tab { padding: 9px 15px; cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--grey); border-bottom: 2px solid transparent; white-space: nowrap; }
+@media (max-width: 640px) {
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 0; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs .grow { display: none; }
+  .tabs .tab { padding: 9px 12px; }
+}
 .tabs .tab:hover { color: var(--accent); }
 .tabs .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 

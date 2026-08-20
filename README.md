@@ -14,6 +14,11 @@ The checklist is the **SPAR ROC National — Retail Operations Checklist**
 > the checklist data embedded. Open `index.html` in any modern browser, or host
 > the folder on GitHub Pages.
 
+> **Phone-friendly.** The layout is responsive: on a phone the category sidebar
+> becomes a compact dropdown so questions are visible immediately, the tab bar
+> scrolls sideways, and **📷 Add photo** opens the camera directly.
+> <br><img src="docs/screenshots/phone-audit.png" alt="Phone view" width="240">
+
 ## Screenshots
 
 | Audit | Summary report |
