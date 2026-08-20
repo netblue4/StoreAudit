@@ -82,8 +82,8 @@
   function renderHeaderCtx() {
     if (State.current && ["audit", "summary", "remediation", "revisit", "progress"].indexOf(State.route) >= 0) {
       var a = State.current;
-      headerCtx.innerHTML = "<span><b>" + esc(a.store.name) + "</b> &middot; " + fmtDate(a.audit.date) + "</span>" +
-        '<a class="btn sm ghost no-print" style="color:#fff;border-color:rgba(255,255,255,.3)" href="#" onclick="App.go(\'dashboard\');return false">All audits</a>';
+      headerCtx.innerHTML = '<span class="ctx-store"><b>' + esc(a.store.name) + '</b><span class="hide-phone"> &middot; ' + fmtDate(a.audit.date) + "</span></span>" +
+        '<a class="btn sm ghost no-print nowrap" style="color:#fff;border-color:rgba(255,255,255,.3)" href="#" onclick="App.go(\'dashboard\');return false">All audits</a>';
     } else {
       headerCtx.innerHTML = "";
     }
@@ -241,6 +241,25 @@
 
   App.selectCat = function (id) { State.activeCat = id; window.scrollTo(0, 0); renderCatNav(); renderCatPanel(); };
 
+  // Compact category dropdown shown only on phones/tablets (see .mobile-cat-picker CSS).
+  function mobileCatPicker(a, activeCat) {
+    var ov = M.scoreOverall(a);
+    var opts = M.CHECKLIST.categories.map(function (c) {
+      var s = M.scoreCategory(a, c);
+      var pct = s.na === s.total ? "N/A" : s.pct + "%";
+      var mark = s.complete ? "✓ " : (s.answered > 0 ? "• " : " ");
+      return '<option value="' + c.id + '"' + (c.id === activeCat.id ? " selected" : "") + ">" +
+        mark + esc(c.number) + ". " + esc(c.name) + " — " + pct + "</option>";
+    }).join("");
+    return '<div class="card">' +
+      '<div class="row between"><span class="small muted">Overall</span>' +
+        '<b style="color:' + (ov.pass ? "var(--green)" : "var(--red)") + '">' + ov.pct + "%</b></div>" +
+      '<div class="pbar ' + (ov.pass ? "green" : "red") + '" style="margin:6px 0 10px"><span style="width:' + ov.pct + '%"></span></div>' +
+      '<select onchange="App.selectCat(this.value)" aria-label="Choose category">' + opts + "</select>" +
+      '<div class="tiny muted" style="margin-top:6px">' + ov.answered + "/" + ov.total + " answered &middot; pass ≥ " + ov.threshold + "%</div>" +
+    "</div>";
+  }
+
   function renderCatPanel() {
     var a = State.current;
     var cat = M.findCategory(State.activeCat);
@@ -259,7 +278,8 @@
     }).join("");
 
     document.getElementById("catPanel").innerHTML =
-      '<div class="card">' +
+      '<div class="mobile-cat-picker">' + mobileCatPicker(a, cat) + "</div>" +
+      '<div class="card" id="catCard">' +
         '<div class="row between">' +
           "<div><h2 style=\"margin-bottom:2px\">" + esc(cat.number) + ". " + esc(cat.name) + "</h2>" +
           (cat.subtitle ? '<div class="tiny muted">' + esc(cat.subtitle) + "</div>" : "") +
@@ -334,14 +354,24 @@
     M.saveAudit(a);
   }
   function updateCatHeader() {
-    // cheap: re-render whole panel header by re-rendering panel would lose focus; instead update nav + progress bar only
+    // Update only the live bits in place (avoids re-rendering the panel and losing input focus).
     var a = State.current, cat = M.findCategory(State.activeCat), s = M.scoreCategory(a, cat);
-    var panel = document.getElementById("catPanel");
-    if (!panel) return;
-    var bigs = panel.querySelector(".card .big");
-    var bar = panel.querySelector(".card .pbar span");
-    if (bigs) { bigs.textContent = (s.na === s.total ? "N/A" : s.pct + "%"); bigs.style.color = s.answered === 0 ? "var(--grey)" : (s.pass ? "var(--green)" : "var(--red)"); }
-    if (bar) { bar.style.width = (s.na === s.total ? 100 : s.pct) + "%"; }
+    var card = document.getElementById("catCard");
+    if (card) {
+      var bigs = card.querySelector(".big");
+      var bar = card.querySelector(".pbar span");
+      if (bigs) { bigs.textContent = (s.na === s.total ? "N/A" : s.pct + "%"); bigs.style.color = s.answered === 0 ? "var(--grey)" : (s.pass ? "var(--green)" : "var(--red)"); }
+      if (bar) { bar.style.width = (s.na === s.total ? 100 : s.pct) + "%"; }
+    }
+    // Keep the mobile picker's overall figure in sync too.
+    var ov = M.scoreOverall(a);
+    var picker = document.querySelector(".mobile-cat-picker");
+    if (picker) {
+      var ob = picker.querySelector("b");
+      var obar = picker.querySelector(".pbar span");
+      if (ob) { ob.textContent = ov.pct + "%"; ob.style.color = ov.pass ? "var(--green)" : "var(--red)"; }
+      if (obar) { obar.style.width = ov.pct + "%"; }
+    }
   }
 
   App.setScore = function (qid, val) { var fq = M.findQuestion(qid); M.setResponse(State.current, qid, { score: M.clamp(val, 0, fq.q.maxScore), na: false }); refreshQuestion(qid); };
