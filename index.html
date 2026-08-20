@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StoreAudit — Retail Store Audit & Remediation</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header no-print">
+    <div class="brand" onclick="App.go('dashboard')">
+      <span class="logo">✓</span>
+      <span>StoreAudit</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="ctx" id="headerCtx"></div>
+  </header>
+
+  <main class="container" id="view"><!-- rendered by app.js --></main>
+
+  <div id="modalRoot"></div>
+  <div id="toast"></div>
+
+  <!-- Data (generated from data/questions.json) -->
+  <script src="js/checklist-data.js"></script>
+  <!-- App modules -->
+  <script src="js/model.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
