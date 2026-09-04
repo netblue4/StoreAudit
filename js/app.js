@@ -75,7 +75,12 @@
       renderHeaderCtx();
     },
     // exposed for inline handlers
-    openAudit: function (id) { State.current = M.getAudit(id); State.activeCat = M.CHECKLIST.categories[0].id; App.go("audit"); },
+    openAudit: function (id) {
+      var a = M.getAudit(id);
+      if (!a) { App.go("dashboard"); return; }
+      if (!M.auditSet(a)) { toast("This audit was made with an older version and can’t be opened.", "err"); App.go("dashboard"); return; }
+      State.current = a; State.activeCat = M.categoriesOf(a)[0].id; App.go("audit");
+    },
     _state: State
   };
 
@@ -96,12 +101,15 @@
       var ov = M.scoreOverall(a);
       var prog = M.remediationProgress(a);
       return '<div class="card audit-card" onclick="App.openAudit(\'' + a.id + '\')">' +
-        '<div class="store">' + esc(a.store.name || "Untitled store") + "</div>" +
-        '<div class="meta">' + fmtDate(a.audit.date) + (a.store.siteId ? " &middot; " + esc(a.store.siteId) : "") +
+        '<div class="row between" style="align-items:flex-start">' +
+          '<div class="store">' + esc(a.store.name || "Untitled store") + "</div>" +
+          (a.store.storeType ? R.badge("grey", a.store.storeType) : "") +
+        "</div>" +
+        '<div class="meta">' + esc(a.auditType || "") + " audit &middot; " + fmtDate(a.audit.date) +
           (a.audit.auditorName ? " &middot; " + esc(a.audit.auditorName) : "") + "</div>" +
         '<div class="stat-row">' +
           '<div><div class="big" style="color:' + (ov.pass ? "var(--green)" : "var(--red)") + '">' + ov.pct + "%</div>" +
-            '<div class="tiny muted">' + (ov.pass ? "Pass" : "Fail") + " &middot; " + (ov.complete ? "complete" : ov.answered + "/" + ov.total) + "</div></div>" +
+            '<div class="tiny muted">' + (ov.band ? esc(ov.band) : (ov.pass ? "Pass" : "Fail")) + " &middot; " + (ov.complete ? "complete" : ov.answered + "/" + ov.total) + "</div></div>" +
           (prog.total ? '<div><div class="big">' + prog.fixed + "/" + prog.total + '</div><div class="tiny muted">remediated</div></div>' : "") +
           (a.revisits && a.revisits.length ? '<div><div class="big">' + a.revisits.length + '</div><div class="tiny muted">revisits</div></div>' : "") +
         "</div>" +
@@ -110,7 +118,7 @@
 
     view.innerHTML =
       '<div class="row between mb">' +
-        "<div><h1>Store Audits</h1><div class=\"muted small\">" + M.CHECKLIST.meta.title + " &middot; v" + esc(M.CHECKLIST.meta.version || "") + "</div></div>" +
+        "<div><h1>Store Audits</h1><div class=\"muted small\">" + M.CHECKLIST.meta.title + " &middot; " + esc(M.CHECKLIST.meta.version || "") + "</div></div>" +
         '<div class="row">' +
           '<button class="btn" onclick="App.importPrompt()">⭱ Import JSON</button>' +
           '<button class="btn primary" onclick="App.go(\'newAudit\')">＋ New Audit</button>' +
@@ -144,12 +152,18 @@
 
   // ---------------- New Audit ----------------
   function renderNewAudit() {
+    var stOpts = M.storeTypes().map(function (s, i) {
+      return '<option value="' + esc(s.label) + '"' + (i === 0 ? " selected" : "") + ">" + esc(s.label) + " — " + esc(s.audit) + " audit</option>";
+    }).join("");
     view.innerHTML =
       '<div class="row between mb"><h1>New Audit</h1>' +
       '<button class="btn ghost" onclick="App.go(\'dashboard\')">Cancel</button></div>' +
       '<div class="card" style="max-width:720px">' +
+        '<label class="field"><span>Store type — selects the audit *</span>' +
+          '<select id="na_type" onchange="App.updateAuditHint()">' + stOpts + "</select></label>" +
+        '<div id="na_hint" class="small muted mb"></div>' +
         '<div class="form-grid">' +
-          field("Store name *", "na_name", "text", "e.g. SPAR Turner and Haupt") +
+          field("Store name *", "na_name", "text", "e.g. TOPS at Riverside") +
           field("Site / Store ID", "na_site", "text", "e.g. 35076 WC") +
           field("Audit date *", "na_date", "date", "", M.todayISO()) +
           field("Auditor name", "na_auditor", "text", "") +
@@ -159,8 +173,17 @@
         '<label class="field"><span>Store address</span><textarea id="na_addr" placeholder="Optional"></textarea></label>' +
         '<div class="row mt"><button class="btn primary" onclick="App.createAudit()">Start audit →</button></div>' +
       "</div>";
+    App.updateAuditHint();
     setTimeout(function () { var el = document.getElementById("na_name"); if (el) el.focus(); }, 30);
   }
+  App.updateAuditHint = function () {
+    var t = document.getElementById("na_type"); if (!t) return;
+    var auditId = M.auditForStoreType(t.value);
+    var set = M.CHECKLIST.audits[auditId];
+    var nq = set ? set.categories.reduce(function (n, c) { return n + c.questions.length; }, 0) : 0;
+    document.getElementById("na_hint").innerHTML =
+      "Uses the <b>" + esc(auditId) + "</b> question set — " + nq + " questions across " + (set ? set.categories.length : 0) + " sections.";
+  };
   function field(label, id, type, ph, val) {
     return '<label class="field"><span>' + label + "</span>" +
       '<input id="' + id + '" type="' + type + '" placeholder="' + esc(ph || "") + '" value="' + esc(val || "") + '"></label>';
@@ -174,6 +197,7 @@
     if (existing) { App.openAudit(existing.id); return; }
     var a = M.newAudit({
       name: name, date: date,
+      storeType: document.getElementById("na_type").value,
       siteId: document.getElementById("na_site").value.trim(),
       auditorName: document.getElementById("na_auditor").value.trim(),
       responsiblePerson: document.getElementById("na_resp").value.trim(),
@@ -181,7 +205,7 @@
       address: document.getElementById("na_addr").value.trim()
     });
     M.saveAudit(a);
-    State.current = a; State.activeCat = M.CHECKLIST.categories[0].id;
+    State.current = a; State.activeCat = M.categoriesOf(a)[0].id;
     toast("Audit created", "ok");
     App.go("audit");
   };
@@ -189,7 +213,7 @@
   // ---------------- Audit screen ----------------
   function renderAudit() {
     if (!State.current) return App.go("dashboard");
-    if (!State.activeCat) State.activeCat = M.CHECKLIST.categories[0].id;
+    if (!State.activeCat) State.activeCat = M.categoriesOf(State.current)[0].id;
     view.innerHTML =
       '<div class="tabs no-print">' + tabBar("audit") + "</div>" +
       '<div class="audit-layout">' +
@@ -218,7 +242,7 @@
 
   function renderCatNav() {
     var a = State.current;
-    var lis = M.CHECKLIST.categories.map(function (cat) {
+    var lis = M.categoriesOf(a).map(function (cat) {
       var s = M.scoreCategory(a, cat);
       var dotCls = s.complete ? "dot done" : (s.answered > 0 ? "dot part" : "dot");
       var pct = s.na === s.total ? "N/A" : s.pct + "%";
@@ -244,7 +268,7 @@
   // Compact category dropdown shown only on phones/tablets (see .mobile-cat-picker CSS).
   function mobileCatPicker(a, activeCat) {
     var ov = M.scoreOverall(a);
-    var opts = M.CHECKLIST.categories.map(function (c) {
+    var opts = M.categoriesOf(a).map(function (c) {
       var s = M.scoreCategory(a, c);
       var pct = s.na === s.total ? "N/A" : s.pct + "%";
       var mark = s.complete ? "✓ " : (s.answered > 0 ? "• " : " ");
@@ -262,10 +286,11 @@
 
   function renderCatPanel() {
     var a = State.current;
-    var cat = M.findCategory(State.activeCat);
+    var cat = M.findCategory(a, State.activeCat);
     var s = M.scoreCategory(a, cat);
-    var idx = M.CHECKLIST.categories.indexOf(cat);
-    var prev = M.CHECKLIST.categories[idx - 1], next = M.CHECKLIST.categories[idx + 1];
+    var cats = M.categoriesOf(a);
+    var idx = cats.indexOf(cat);
+    var prev = cats[idx - 1], next = cats[idx + 1];
 
     var groups = [], cur = null;
     cat.questions.forEach(function (q) {
@@ -312,8 +337,11 @@
     return '<div class="question ' + stateCls + '" id="q_' + q.id + '">' +
       '<div class="qhead">' +
         '<span class="qref">' + esc(q.ref) + "</span>" +
-        '<span class="qtext">' + esc(q.text) + "</span>" +
-        '<span class="qmax">max ' + q.maxScore + "</span>" +
+        '<span class="qtext">' + esc(q.text) +
+          (q.severity ? ' <span class="badge ' + q.severity.toLowerCase() + '" style="vertical-align:middle">' + esc(q.severity) + "</span>" : "") +
+          (q.weight ? ' <span class="tiny muted">· weight ' + q.weight + "%</span>" : "") +
+        "</span>" +
+        '<span class="qmax">0–' + q.maxScore + "</span>" +
       "</div>" +
       (q.guidance ? '<span class="gtoggle" onclick="App.toggleGuidance(\'' + q.id + '\')">ⓘ Guidance</span>' +
         '<div class="guidance hidden" id="g_' + q.id + '">' + esc(q.guidance) + "</div>" : "") +
@@ -335,18 +363,16 @@
   }
 
   function scoreOptions(max) {
-    // build a compact set of quick values: 0, some steps, max
-    var set = { 0: 1 };
-    set[max] = 1;
-    [1, 3, 5, 10].forEach(function (v) { if (v < max) set[v] = 1; });
-    if (max > 5 && max !== 10) set[Math.round(max / 2)] = 1;
-    return Object.keys(set).map(Number).sort(function (x, y) { return x - y; });
+    // every whole value 0..max (scale is 0–3)
+    var out = [];
+    for (var v = 0; v <= max; v++) out.push(v);
+    return out;
   }
 
   // ---- audit interactions ----
   function refreshQuestion(qid) {
     var a = State.current;
-    var fq = M.findQuestion(qid);
+    var fq = M.findQuestion(a, qid);
     var el = document.getElementById("q_" + qid);
     if (el && fq) { el.outerHTML = questionHTML(a, fq.q); }
     renderCatNav();
@@ -355,7 +381,7 @@
   }
   function updateCatHeader() {
     // Update only the live bits in place (avoids re-rendering the panel and losing input focus).
-    var a = State.current, cat = M.findCategory(State.activeCat), s = M.scoreCategory(a, cat);
+    var a = State.current, cat = M.findCategory(a, State.activeCat), s = M.scoreCategory(a, cat);
     var card = document.getElementById("catCard");
     if (card) {
       var bigs = card.querySelector(".big");
@@ -374,7 +400,7 @@
     }
   }
 
-  App.setScore = function (qid, val) { var fq = M.findQuestion(qid); M.setResponse(State.current, qid, { score: M.clamp(val, 0, fq.q.maxScore), na: false }); refreshQuestion(qid); };
+  App.setScore = function (qid, val) { var fq = M.findQuestion(State.current, qid); M.setResponse(State.current, qid, { score: M.clamp(val, 0, fq.q.maxScore), na: false }); refreshQuestion(qid); };
   App.setScoreRaw = function (qid, max, raw) {
     if (raw === "") { M.setResponse(State.current, qid, { score: null }); }
     else { var v = M.clamp(parseInt(raw, 10) || 0, 0, max); M.setResponse(State.current, qid, { score: v, na: false }); }
@@ -419,7 +445,7 @@
                     '<button class="btn" onclick="window.print()">🖨 Print / PDF</button>' : "") +
       "</div></div>" +
       (!hasItems
-        ? '<div class="card"><p class="muted">The remediation report lists <b>every failed question</b> (answered, not N/A, scored below its maximum). ' +
+        ? '<div class="card"><p class="muted">The remediation report lists every <b>Critical</b> or <b>Major</b> question scored below full marks (Partial findings are not chased). ' +
           'Currently ' + (ov.answered ? "no items have been generated." : "the audit has no answers yet.") + '</p>' +
           '<button class="btn primary" onclick="App.regenRemediation()">Generate remediation report</button></div>'
         : renderRemInteractive(a));
@@ -442,7 +468,7 @@
       return '<div class="rem-item ' + R.sevClass(it.severity) + '">' +
         '<div class="rem-head">' +
           '<span class="idx">#' + (i + 1) + "</span>" +
-          sevSelect(it) +
+          R.badge(it.severity.toLowerCase(), it.severity) +
           R.statusBadge(st) +
           '<span class="grow"></span>' +
           '<span class="tiny muted mono">' + esc(it.category) + " &middot; " + esc(it.ref) + "</span>" +
@@ -460,22 +486,14 @@
         "</div>" +
       "</div>";
     }).join("");
-    return '<div class="card no-print"><div class="row between"><div>' +
-        badge("critical", prog.sev.Critical.t + " Critical") + " " + badge("major", prog.sev.Major.t + " Major") + " " + badge("minor", prog.sev.Minor.t + " Minor") +
+    var sevChips = M.severityLevels().map(function (s) {
+      var d = prog.sev[s]; if (!d || !d.t) return "";
+      return badge(s.toLowerCase(), d.t + " " + s);
+    }).filter(Boolean).join(" ");
+    return '<div class="card no-print"><div class="row between"><div>' + sevChips +
       '</div><div class="small muted">' + prog.total + " findings &middot; " + prog.fixed + " fixed, " + prog["in-progress"] + " in progress, " + prog.open + " open</div></div></div>" +
       cards;
   }
-
-  function sevSelect(it) {
-    var opts = M.severityLevels().map(function (s) {
-      return '<option value="' + s + '"' + (s === it.severity ? " selected" : "") + ">" + s + "</option>";
-    }).join("");
-    return '<select style="width:auto;padding:3px 6px;font-size:.8rem" onchange="App.setSeverity(\'' + it.id + '\',this.value)">' + opts + "</select>";
-  }
-  App.setSeverity = function (itemId, sev) {
-    var it = M.remItem(State.current, itemId); if (!it) return;
-    it.severity = sev; M.saveAudit(State.current); renderRemediation();
-  };
 
   function histHTML(a, it, hist) {
     var rows = hist.map(function (h) {
@@ -584,7 +602,7 @@
   }
 
   // ---------------- boot ----------------
-  if (!window.CHECKLIST || !window.CHECKLIST.categories) {
+  if (!window.CHECKLIST || !window.CHECKLIST.audits) {
     view.innerHTML = '<div class="card"><h2>Checklist data failed to load</h2><p class="muted">js/checklist-data.js is missing.</p></div>';
   } else {
     App.go("dashboard");

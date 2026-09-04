@@ -150,6 +150,7 @@ textarea { resize: vertical; min-height: 60px; }
 .badge.pass { background: var(--green-l); color: var(--green); }
 .badge.fail { background: var(--red-l); color: var(--red); }
 .badge.minor { background: var(--accent-l); color: var(--accent); }
+.badge.partial { background: var(--accent-l); color: var(--accent); }
 .badge.major { background: var(--amber-l); color: var(--amber); }
 .badge.critical { background: var(--red-l); color: var(--red); }
 .badge.open { background: var(--red-l); color: var(--red); }
@@ -267,6 +268,7 @@ table.data tfoot td { font-weight: 800; background: var(--accent-l); border-top:
 .rem-item.sev-critical { border-left: 4px solid var(--red); }
 .rem-item.sev-major { border-left: 4px solid var(--amber); }
 .rem-item.sev-minor { border-left: 4px solid var(--accent); }
+.rem-item.sev-partial { border-left: 4px solid var(--accent); }
 .kv { display: grid; grid-template-columns: 130px 1fr; gap: 4px 12px; font-size: .88rem; margin-top: 6px; }
 .kv .k { color: var(--grey); font-weight: 600; }
 .hist { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px; }
