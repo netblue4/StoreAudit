@@ -1,74 +1,73 @@
 # Retail Store Audit & Remediation — Process
 
-This is the workflow the app implements. (A formatted Word version is in
-`docs/Process_Specification.docx`.)
+The app supports **two audits, chosen by store type**, and the new 0–3 weighted
+scoring with rating bands. (A formatted version is in
+`docs/Workflow_ROC_RTTT.docx`.)
+
+## The two audits
+
+| Audit | Store types | Questions | Sections |
+|---|---|---|---|
+| **ROC** | SUPERSPAR · SPAR · SAVEMOR | 82 | 13 |
+| **RTTT** | TOPS | 53 | 9 |
+
+The auditor picks the store type when starting an audit; the app then loads only
+that audit's questions.
 
 ## How scoring works
 
-Weighting is **not** a separate multiplier — the **weight of a question is its
-maximum point value**. More important questions are worth more points, and
-everything rolls up by addition.
+- Every question is scored **0–3** (0 = not met, 3 = fully met), or marked **N/A**
+  to exclude it.
+- Each question has a **Weight (%)** and a built-in **severity** — Critical,
+  Major or Partial.
+- **Section % and overall %** = Σ(score ÷ 3 × weight) ÷ Σ(weight). N/A questions
+  are excluded from both.
+- The store **passes at 80%**, and the overall % is also graded into a
+  **rating band**:
 
-- **Question** — each question has a maximum score, its weight (typically 1, 3,
-  5 or 10). Most are all-or-nothing: the store gets the full points or 0. Award
-  a partial value where appropriate.
-- **Category** — weight = sum of its questions' max points; score = sum of
-  achieved points; result % = score ÷ weight.
-- **Overall** — the store passes at **80%** overall (total score ÷ total weight).
-- **N/A** — a question can be marked N/A (e.g. the store has no flags); N/A
-  questions count toward neither weight nor score.
-
-*A question's weight = its maximum points; a category's weight = the sum of its
-questions' maximum points; the score % = points achieved ÷ points available; and
-the store passes at 80% overall.*
+| Score | Rating |
+|---|---|
+| 95–100% | Platinum |
+| 90–94% | Gold |
+| 80–89% | Silver |
+| 70–79% | Bronze |
+| Below 70% | Improvement Required |
 
 ## Phase 1 — The Audit (first visit)
 
-1. Load the master question set (categories → questions, each with its weight
-   and evaluation criteria).
-2. Work through every category, asking each question.
-3. Award each question an **achieved score** (0 up to its max), or mark it **N/A**.
-4. Record a short **reason / comment** for each finding.
-5. Optionally attach a **photo** as evidence.
-6. The app auto-calculates each category's score, weight and %, and the overall %
-   against the 80% pass mark.
-7. Generate the **summary report** — **category-level only** (each category's %,
-   weight, score; overall Pass/Fail). Individual questions are not listed here.
-8. Save the whole audit to a JSON file named **`<Store>_<Date>.json`** — a frozen
-   record that is never overwritten.
+1. **Choose the store type / audit** — e.g. TOPS → RTTT, or a SPAR supermarket →
+   ROC. The app loads that audit's questions.
+2. Enter the store details (name, ID, date, auditor, responsible person).
+3. Work through each section, scoring every question **0–3**, or marking N/A.
+4. Record a **reason** for each score, and optionally a **photo** as evidence.
+5. The app calculates each section's weighted %, the overall %, the **pass/fail**
+   (80%), and the **rating band**.
+6. Generate the **summary report** — section-level results + overall rating.
+   Print or save as PDF.
+7. Save the audit as a **`<Store>_<Date>.json`** file (a frozen record).
 
-## Phase 2 — Remediation plan (new addition)
+## Phase 2 — Remediation plan
 
-9. The app pulls out **every failed question** (answered, not N/A, scored below
-   its maximum), across all categories.
-10. Each becomes a **remediation action item** carrying: the question, its
-    category, achieved vs max score, the reason, the photo, a **severity
-    (Minor / Major / Critical)**, and a status starting at **Open**.
-11. Generate the **remediation report**, ordered so **Critical** items come
-    first, and hand it to the store owner.
+8. The app pulls out every **Critical or Major** question scored below full marks
+   (Partial findings are not chased). Each becomes a remediation action item with
+   its built-in severity, ordered Critical first.
+9. Generate the **remediation report** and hand it to the store owner.
 
-## Phase 3 — Revisit & reassessment (new addition)
+## Phase 3 — Revisit & reassessment
 
-12. On a return visit, the app **loads the store's JSON** and opens its
-    outstanding remediation items.
-13. For each item the auditor sets a status — **Fixed / In progress / Open** —
-    and may record a **new score** as proof of improvement. *This new score is
-    remediation evidence only; the original audit score is never changed.*
-14. Optionally attach a **photo** of the correction.
-15. The revisit is **appended (dated) to the same JSON file**, preserving full
-    history.
-16. The app shows the **progress flow**: *found N problems → X fixed / Y in
-    progress / Z open*, per revisit, with a severity breakdown.
-17. When all items are Fixed, that audit's remediation cycle is complete. A
-    future full audit starts a **new JSON file**, and the store's audit history
-    grows over time.
+10. On a return visit, reload the store's JSON and open its outstanding items.
+11. Mark each item **Fixed / In progress / Open**, with an optional new score and
+    photo. *The new score is remediation evidence only — the original audit is
+    never changed.*
+12. The revisit is appended (dated) to the same file, preserving history.
+13. The **progress** view shows found N problems → X fixed / Y in progress / Z
+    open, per revisit, with a severity breakdown. A new full audit starts a new
+    file.
 
 ## Confirmed decisions
 
-- **Delinquent rule:** every failed question becomes a remediation item (matching
-  how the current SPAR report behaves), not only questions in failed categories.
-- **Severity:** each remediation item carries a Minor / Major / Critical tag so
-  the owner fixes the most serious items first.
-- **Revisit re-score:** a follow-up score is stored as remediation evidence only —
-  the original audit record stays untouched, preserving the before-and-after
-  picture.
+- **Store type → audit:** TOPS → RTTT; SUPERSPAR / SPAR / SAVEMOR → ROC.
+- **Score formula:** overall % = Σ(score ÷ 3 × weight) ÷ Σ(weight).
+- **80% pass line** stays, shown alongside the rating band.
+- **Remediation** lists **Critical and Major** findings only (Partial excluded);
+  severity comes from the question, not the auditor.

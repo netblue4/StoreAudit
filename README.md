@@ -1,20 +1,25 @@
 # StoreAudit
 
 A self-contained web app for retail store auditing, remediation planning, and
-follow-up reassessment. Built for a field auditor who works through a large,
-weighted checklist, presents category-level findings to the store owner, hands
-over an actionable remediation report, and returns on later visits to record how
-far the owner has progressed in fixing the delinquent findings.
+follow-up reassessment. Built for a field auditor who picks the audit that
+matches the store type, works through a weighted checklist, presents section-level
+findings to the store owner, hands over an actionable remediation report, and
+returns on later visits to record how far the owner has progressed in fixing the
+delinquent findings.
 
-The checklist is the **SPAR ROC National — Retail Operations Checklist**
-(38 categories, 682 weighted questions), parsed from the source spreadsheet in
-[`samples/`](samples/).
+It carries **two audits, chosen by store type**, from the source spreadsheet in
+[`samples/`](samples/):
+
+| Audit | Store types | Questions | Sections |
+|---|---|---|---|
+| **ROC** | SUPERSPAR · SPAR · SAVEMOR | 82 | 13 |
+| **RTTT** | TOPS | 53 | 9 |
 
 > **No install, no server, works offline.** It's plain HTML/CSS/JavaScript with
 > the checklist data embedded. Open `index.html` in any modern browser, or host
 > the folder on GitHub Pages.
 
-> **Phone-friendly.** The layout is responsive: on a phone the category sidebar
+> **Phone-friendly.** The layout is responsive: on a phone the section sidebar
 > becomes a compact dropdown so questions are visible immediately, the tab bar
 > scrolls sideways, and **📷 Add photo** opens the camera directly.
 > <br><img src="docs/screenshots/phone-audit.png" alt="Phone view" width="240">
@@ -31,44 +36,52 @@ The checklist is the **SPAR ROC National — Retail Operations Checklist**
 
 ## What it does
 
-1. **Audit** — work category by category. Each question gets a score (0 up to its
-   maximum), a reason, and an optional photo, or is marked **N/A**. Category and
-   overall percentages update live against the **80% pass mark**.
-2. **Summary report** — a category-level Pass/Fail table (Weight · Score · %),
-   matching the SPAR summary format. Print or save to PDF from the browser.
-3. **Remediation report** — automatically lists **every failed question**
-   (answered, not N/A, below its maximum), each tagged **Minor / Major /
-   Critical** and ordered Critical-first. Hand this to the store owner.
-4. **Revisit & reassessment** — on a later visit, load the store's file and mark
+1. **Choose the store type** on the New Audit screen — TOPS runs the **RTTT**
+   audit; SUPERSPAR / SPAR / SAVEMOR run the **ROC** audit. The app loads only
+   that audit's questions.
+2. **Audit** — work section by section. Each question is scored **0–3**, with a
+   reason and an optional photo, or marked **N/A**. Section and overall
+   percentages update live against the **80% pass mark**, and the overall %
+   shows its **rating band** (Platinum → Improvement Required).
+3. **Summary report** — a section-level Pass/Fail table (Weight · Score · %) with
+   the overall rating. Print or save to PDF from the browser.
+4. **Remediation report** — automatically lists every **Critical or Major**
+   question scored below full marks (Partial findings are not chased), ordered
+   Critical-first, each carrying the question's built-in severity.
+5. **Revisit & reassessment** — on a later visit, load the store's file and mark
    each item **Fixed / In progress / Open**, with an optional new score and photo
    as evidence. The original audit is never altered.
-5. **Progress** — a before → after view: *problems found → fixed / in progress /
+6. **Progress** — a before → after view: *problems found → fixed / in progress /
    open*, a completion bar, a severity breakdown, and a visit-by-visit history.
 
-See [`docs/PROCESS.md`](docs/PROCESS.md) for the full workflow and the scoring /
-weighting model, or [`docs/Process_Specification.docx`](docs/Process_Specification.docx)
-for the formatted version.
+See [`docs/PROCESS.md`](docs/PROCESS.md) for the full workflow and the scoring
+model, or [`docs/Workflow_ROC_RTTT.docx`](docs/Workflow_ROC_RTTT.docx) for the
+formatted version.
 
-## How weighting works
+## How scoring works
 
-The **weight of a question is its maximum point value** — there is no separate
-multiplier. A category's weight is the sum of its questions' maximum points; its
-score is the sum of the points achieved; its result % is score ÷ weight. N/A
-questions are excluded from both. The store passes at **80% overall**. This
-reconciles exactly with the example summary report (Legal Compliance 63, Parking
-23, Bakery 130, etc.).
+Every question is scored **0–3** and carries a **Weight (%)** and a built-in
+**severity** (Critical / Major / Partial). A section's (and the overall) score is
+the weighted average:
+
+```
+% = sum(score ÷ 3 × weight) ÷ sum(weight)      (N/A questions excluded)
+```
+
+The store **passes at 80%**, and the overall % is graded into a rating band:
+Platinum (95–100), Gold (90–94), Silver (80–89), Bronze (70–79), else Improvement
+Required.
 
 ## Data & storage
 
-- Each audit is one **JSON file named `<Store>_<Date>.json`** (e.g.
-  `SPAR_Turner_and_Haupt_2026-08-20.json`).
+- Each audit is one **JSON file named `<Store>_<Date>.json`** and records which
+  audit set (ROC / RTTT) and store type it used.
 - **Export JSON** downloads that file; **Import JSON** loads it back on a revisit.
 - The browser also keeps a working copy in `localStorage`, so audits survive a
   page reload on the same device. The exported file is the portable record to
-  keep and to reopen on revisits.
+  keep and reopen on revisits.
 - **Revisits are appended** to the same file (a dated list of status/score/photo
-  updates per item), so one file tells the whole story of one audit and all its
-  follow-ups. A new full audit starts a new file.
+  updates per item). A new full audit starts a new file.
 
 Photos are downscaled and embedded in the JSON as data URLs, so a file is fully
 self-contained.
@@ -89,10 +102,10 @@ js/checklist-data.js       Embedded checklist (generated) — window.CHECKLIST
 js/model.js                Data model, persistence, scoring, remediation logic
 js/reports.js              Printable report renderers (summary, remediation, progress)
 js/app.js                  Views, router, audit/remediation/revisit interactions
-data/questions.json        Master question set (human-readable source of truth)
+data/questions.json        Both audit sets (human-readable source of truth)
 tools/build_questions.py   Regenerates data/questions.json + js/checklist-data.js
-samples/                   Source SPAR checklist (.xlsx) + example summary report (.pdf)
-docs/                      Process spec (Markdown + Word) and screenshots
+samples/                   Source spreadsheet (RTTT_and_ROC_Checklist.xlsx)
+docs/                      Process docs (Markdown + Word) and screenshots
 ```
 
 ## Regenerating the checklist data
@@ -103,15 +116,6 @@ If the source spreadsheet changes, rebuild the data files:
 python3 tools/build_questions.py      # needs: pip install openpyxl
 ```
 
-This reads `samples/ROC_National_Checklist.xlsx` and rewrites both
-`data/questions.json` and `js/checklist-data.js`.
-
-### A note on the aisle departments
-
-The spreadsheet defines one "Dry Goods" shop-floor aisle as a template. The SPAR
-summary report audits each grocery aisle separately (Breakfast, Main Meals, Home
-Care, Pet Care, General Merchandise, Personal Care, Baby, Snacking, Health,
-Bulk), each at the same weight. The build script therefore **clones the Dry Goods
-question set** for those departments so the app reproduces the report faithfully.
-Any that don't apply to a given store can simply be marked N/A. Edit the
-`CLONE_DEPTS` list in `tools/build_questions.py` to change them.
+This reads `samples/RTTT_and_ROC_Checklist.xlsx` (the `ROC_Audit` and `RTTT` tabs)
+and rewrites both `data/questions.json` and `js/checklist-data.js`. The store-type
+→ audit mapping and the rating bands are defined at the top of that script.
