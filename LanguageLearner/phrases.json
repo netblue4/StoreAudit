@@ -1,0 +1,73 @@
+{
+  "courseTitle": "Cycling Language Loop",
+  "lessons": [
+    {
+      "topic": "Greetings and Small Talk",
+      "items": [
+        {
+          "id": "1-1",
+          "english": "Hello, good morning! How are you doing today? I am doing well, thank you. Have a great day.",
+          "german": "Hallo, guten Morgen! Wie geht es Ihnen heute? Mir geht es gut, danke. Einen schönen Tag noch.",
+          "french": "Bonjour ! Comment allez-vous aujourd'hui ? Je vais bien, merci. Bonne journée."
+        },
+        {
+          "id": "1-2",
+          "english": "Good evening. It is nice to meet you. My name is John. See you later.",
+          "german": "Guten Abend. Es freut mich, Sie kennenzulernen. Mein Name ist John. Bis später.",
+          "french": "Bonsoir. C'est un plaisir de vous rencontrer. Je m'appelle John. À plus tard."
+        }
+      ]
+    },
+    {
+      "topic": "Ordering Coffee",
+      "items": [
+        {
+          "id": "2-1",
+          "english": "Hello, I would like a large coffee with milk, please. To go, please.",
+          "german": "Hallo, ich hätte gerne einen großen Kaffee mit Milch, bitte. Zum Mitnehmen, bitte.",
+          "french": "Bonjour, je voudrais un grand café au lait, s'il vous plaît. À emporter, s'il vous plaît."
+        },
+        {
+          "id": "2-2",
+          "english": "I would also like a piece of cake. How much does that cost in total? Thank you, keep the change.",
+          "german": "Ich hätte auch gerne ein Stück Kuchen. Wie viel kostet das zusammen? Danke, stimmt so.",
+          "french": "Je voudrais aussi une part de gâteau. Combien ça coûte au total ? Merci, gardez la monnaie."
+        }
+      ]
+    },
+    {
+      "topic": "Common Useful Phrases",
+      "items": [
+        {
+          "id": "3-1",
+          "english": "Excuse me, do you speak English? My German and French are not very good yet. I am still learning.",
+          "german": "Entschuldigung, sprechen Sie Englisch? Mein Deutsch und Französisch sind noch nicht sehr gut. Ich lerne noch.",
+          "french": "Excusez-moi, parlez-vous anglais ? Mon allemand et mon français ne sont pas encore très bons. J'apprends encore."
+        },
+        {
+          "id": "3-2",
+          "english": "I do not understand. Could you please speak a little slower? Could you please repeat that?",
+          "german": "Ich verstehe nicht. Könnten Sie bitte etwas langsamer sprechen? Könnten Sie das bitte wiederholen?",
+          "french": "Je ne comprends pas. Pourriez-vous parler un peu plus lentement, s'il vous plaît ? Pourriez-vous répéter cela, s'il vous plaît ?"
+        }
+      ]
+    },
+    {
+      "topic": "On the Go",
+      "items": [
+        {
+          "id": "4-1",
+          "english": "Excuse me, may I pass? Thank you very much. The weather is beautiful today.",
+          "german": "Entschuldigung, darf ich vorbei? Vielen Dank. Das Wetter ist heute wunderschön.",
+          "french": "Excusez-moi, puis-je passer ? Merci beaucoup. Il fait beau aujourd'hui."
+        },
+        {
+          "id": "4-2",
+          "english": "Where is the restroom, please? It is on the right side.",
+          "german": "Wo ist bitte die Toilette? Sie ist auf der rechten Seite.",
+          "french": "Où sont les toilettes, s'il vous plaît ? C'est à droite."
+        }
+      ]
+    }
+  ]
+}

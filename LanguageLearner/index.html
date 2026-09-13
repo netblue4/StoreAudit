@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="description" content="Hands-free German & French language learning for cyclists, with Bluetooth headset controls." />
+  <title>Language Learner — Cycling Language Loop</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Silent looping audio: required to hold an OS Media Session so that
+       Bluetooth / headset media keys (next / prev / play / pause) route to us. -->
+  <audio id="silence" loop preload="auto" playsinline></audio>
+
+  <main id="app">
+    <!-- ===== Home screen: list of topics ===== -->
+    <section id="home" class="screen">
+      <header class="app-header">
+        <h1 id="courseTitle">Language Learner</h1>
+        <p class="subtitle">Hands-free EN → DE → FR practice for your ride</p>
+      </header>
+      <ul id="topicList" class="topic-list" aria-label="Topics"></ul>
+      <p class="hint">
+        Tip: connect your Bluetooth earphones, tap a topic, then press Play.
+        Double-tap earphones = next phrase · single tap = play/pause.
+      </p>
+    </section>
+
+    <!-- ===== Player screen ===== -->
+    <section id="player" class="screen" hidden>
+      <header class="player-header">
+        <button id="backBtn" class="icon-btn" aria-label="Back to topics">&#8592;</button>
+        <div class="player-heading">
+          <h2 id="playerTopic">Topic</h2>
+          <span id="progress" class="progress">1 / 2</span>
+        </div>
+      </header>
+
+      <div class="phrase-card">
+        <div class="lang-row" data-active="en">
+          <span class="flag" aria-hidden="true">🇬🇧</span>
+          <p id="textEn" class="phrase-text"></p>
+        </div>
+        <div class="lang-row" data-active="de">
+          <span class="flag" aria-hidden="true">🇩🇪</span>
+          <p id="textDe" class="phrase-text"></p>
+        </div>
+        <div class="lang-row" data-active="fr">
+          <span class="flag" aria-hidden="true">🇫🇷</span>
+          <p id="textFr" class="phrase-text"></p>
+        </div>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite">Ready</div>
+
+      <div class="controls">
+        <button id="prevBtn" class="ctrl-btn" aria-label="Previous phrase">⏮</button>
+        <button id="playBtn" class="ctrl-btn play" aria-label="Play">▶</button>
+        <button id="nextBtn" class="ctrl-btn" aria-label="Next phrase">⏭</button>
+      </div>
+
+      <label class="autoloop">
+        <input type="checkbox" id="loopChk" checked />
+        Loop topic continuously
+      </label>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
